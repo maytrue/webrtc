@@ -19,11 +19,13 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/nethelpers.h"
 
+#include "p2p/base/momortcconfig.h"
+
 namespace cricket {
 
 // TODO: Move these to a common place (used in relayport too)
-const int KEEPALIVE_DELAY = 10 * 1000;  // 10 seconds - sort timeouts
-const int RETRY_TIMEOUT = 50 * 1000;    // 50 seconds
+// const int KEEPALIVE_DELAY = 60 * 1000;  // 10 seconds - sort timeouts
+// const int RETRY_TIMEOUT = 120 * 1000;    // 50 seconds
 
 // Handles a binding request sent to the STUN server.
 class StunBindingRequest : public StunRequest {
@@ -75,7 +77,7 @@ class StunBindingRequest : public StunRequest {
 
     int64_t now = rtc::TimeMillis();
     if (WithinLifetime(now) &&
-        rtc::TimeDiff(now, start_time_) < RETRY_TIMEOUT) {
+        rtc::TimeDiff(now, start_time_) < MomoRTCConfig::getInstance()->getStunRetryTimeout()) {
       port_->requests_.SendDelayed(
           new StunBindingRequest(port_, server_addr_, start_time_),
           port_->stun_keepalive_delay());
@@ -173,9 +175,10 @@ UDPPort::UDPPort(rtc::Thread* thread,
       socket_(socket),
       error_(0),
       ready_(false),
-      stun_keepalive_delay_(KEEPALIVE_DELAY),
+      // stun_keepalive_delay_(KEEPALIVE_DELAY),
       emit_local_for_anyaddress_(emit_local_for_anyaddress) {
   requests_.set_origin(origin);
+  stun_keepalive_delay_ = MomoRTCConfig::getInstance()->getStunKeepAliveDelay();
 }
 
 UDPPort::UDPPort(rtc::Thread* thread,
@@ -199,8 +202,9 @@ UDPPort::UDPPort(rtc::Thread* thread,
       socket_(NULL),
       error_(0),
       ready_(false),
-      stun_keepalive_delay_(KEEPALIVE_DELAY),
+      // stun_keepalive_delay_(KEEPALIVE_DELAY),
       emit_local_for_anyaddress_(emit_local_for_anyaddress) {
+  stun_keepalive_delay_ = MomoRTCConfig::getInstance()->getStunKeepAliveDelay();
   requests_.set_origin(origin);
 }
 
